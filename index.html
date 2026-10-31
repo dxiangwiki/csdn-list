@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSDN热榜-直接请求测试（会跨域报错）</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif;}
+        body{background:#f5f6f7;padding:20px;max-width:1000px;margin:0 auto;}
+        h1{color:#333;margin-bottom:20px;font-size:22px;}
+        .loading{padding:30px;text-align:center;color:#666;}
+        .item{background:#fff;padding:14px 16px;margin-bottom:10px;border-radius:8px;box-shadow:0 1px 4px #00000010;}
+        .rank{display:inline-block;width:26px;height:26px;border-radius:50%;background:#f40;color:#fff;text-align:center;line-height:26px;margin-right:8px;font-size:14px;}
+        .item a{font-size:16px;color:#222;text-decoration:none;}
+        .item a:hover{color:#f40;}
+        .info{margin-top:6px;font-size:13px;color:#777;}
+        .error{background:#ffeaea;color:#c53030;padding:16px;border-radius:8px;}
+    </style>
+</head>
+<body>
+    <h1>CSDN 热榜（直接请求原版接口，测试报错）</h1>
+    <div id="list"></div>
+
+<script>
+const listDom = document.getElementById('list');
+// 直接写CSDN原生接口地址
+const apiUrl = "https://blog.csdn.net/phoenix/web/blog/hot-rank?page=0&pageSize=25&type=";
+
+async function loadData(){
+    listDom.innerHTML = `<div class="loading">加载中...</div>`;
+    try {
+        const res = await fetch(apiUrl, {
+            method:"GET",
+            headers:{
+                "Accept":"application/json, text/plain, */*",
+                "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0",
+                "Referer":"https://blog.csdn.net/rank/list/content",
+                "csrfToken":"dhRXNi28kZBM1-1NAGZDFvFP"
+            }
+        })
+        const data = await res.json();
+        render(data);
+    }catch(e){
+        listDom.innerHTML = `<div class="error">
+            ❌ 请求出错<br>
+            错误信息：${e.message}<br><br>
+            打开F12【控制台】，你会看到 CORS / 跨域相关红色报错。
+            <br>简单说：浏览器安全策略，不允许本地html直接访问csdn的接口。
+        </div>`
+    }
+}
+
+function render(resp){
+    listDom.innerHTML = "";
+    if(resp.code !== 200){
+        listDom.innerHTML = `<div class="error">接口返回错误：${resp.msg}</div>`;
+        return;
+    }
+    const arr = resp.data;
+    arr.forEach((item, idx)=>{
+        const div = document.createElement('div');
+        div.className = "item";
+        div.innerHTML = `
+            <span class="rank">${idx+1}</span>
+            <a href="${item.url}" target="_blank">${item.title}</a>
+            <div class="info">作者：${item.nickname} · 阅读：${item.readCount} · 点赞：${item.diggCount}</div>
+        `
+        listDom.appendChild(div);
+    })
+}
+
+loadData();
+</script>
+</body>
+</html>
